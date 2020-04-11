@@ -1,0 +1,232 @@
+SQL> start query1
+SQL> SELECT cname,telephone# FROM customers WHERE visits_made >= 3 AND SUBSTR(telephone#, 1,3) = 666
+  2  /
+
+CNAME           TELEPHONE#                                                      
+--------------- ------------                                                    
+Kathy           666-555-4567                                                    
+Chris           666-555-6745                                                    
+
+SQL> start query2
+SQL> SELECT C.cname, C.telephone# FROM customers C, purchases P WHERE P.ptime >= SYSDATE - INTERVAL '25' DAY AND P.total_price >= 100 AND P.cid = C.cid GROUP BY C.cname, C.telephone#
+  2  /
+
+CNAME           TELEPHONE#                                                      
+--------------- ------------                                                    
+Kathy           666-555-4567                                                    
+Chris           666-555-6745                                                    
+Mike            999-555-5674                                                    
+Joe             666-555-5746                                                    
+
+SQL> start query3
+SQL> SELECT P.pid, P.pname FROM products P, purchases O, employees E WHERE O.eid = E.eid AND E.ename = 'Peter' AND O.pid = P.pid AND P.original_price * (1-P.discnt_rate) < 10
+  2  /
+
+PID  PNAME                                                                      
+---- ---------------                                                            
+p005 chair                                                                      
+
+SQL> start query4
+SQL> SELECT P.pur#, P.eid, P.pid, P.cid, P.qty, P.ptime, P.total_price FROM purchases P, employees E, customers C , products O WHERE P.eid = E.eid AND P.cid = C.cid AND SUBSTR(E.telephone#,1,3) = SUBSTR(C.telephone#,1,3) AND P.pid = O.pid AND O.pname != 'TV'
+  2  /
+
+      PUR# EID PID  CID         QTY PTIME     TOTAL_PRICE                       
+---------- --- ---- ---- ---------- --------- -----------                       
+    100009 e03 p001 c007          1 12-MAR-20        8.99                       
+    100002 e01 p003 c001          1 20-FEB-20       118.4                       
+    100011 e02 p004 c006         10 16-MAR-20         9.9                       
+    100004 e01 p005 c003          2 23-FEB-20       18.17                       
+
+SQL> start query5
+SQL> SELECT pur#, to_char(ptime, 'Mon DD, YYYY DAY HH24:MI:SS') as ptime FROM purchases ORDER BY ptime
+  2  /
+
+      PUR# PTIME                                                                
+---------- -------------------------------------------------------------------  
+    100007 Feb 10, 2020 MONDAY    17:12:20                                      
+    100012 Feb 18, 2020 TUESDAY   15:56:38                                      
+    100002 Feb 20, 2020 THURSDAY  11:23:36                                      
+    100004 Feb 23, 2020 SUNDAY    16:23:35                                      
+    100001 Jan 12, 2020 SUNDAY    10:34:30                                      
+    100008 Jan 16, 2020 THURSDAY  12:22:15                                      
+    100010 Jan 19, 2020 SUNDAY    17:32:37                                      
+    100013 Jan 30, 2020 THURSDAY  10:38:25                                      
+    100003 Mar 08, 2020 SUNDAY    09:30:50                                      
+    100009 Mar 12, 2020 THURSDAY  14:44:23                                      
+    100006 Mar 12, 2020 THURSDAY  15:22:10                                      
+
+      PUR# PTIME                                                                
+---------- -------------------------------------------------------------------  
+    100011 Mar 16, 2020 MONDAY    16:54:40                                      
+    100014 Mar 18, 2020 WEDNESDAY 10:54:06                                      
+    100005 Mar 20, 2020 FRIDAY    13:38:55                                      
+
+14 rows selected.
+
+SQL> start query6
+SQL> SELECT E.eid FROM employees E, customers C WHERE SUBSTR(E.telephone#,1,3) = SUBSTR(C.telephone#,1,3) GROUP BY E.eid ORDER BY E.eid
+  2  /
+
+EID                                                                             
+---                                                                             
+e01                                                                             
+e02                                                                             
+e03                                                                             
+e04                                                                             
+
+SQL> start query7
+SQL> SELECT C.cname FROM customers C, purchases P, products O WHERE C.last_visit_date = to_char(P.ptime, 'DD-MON-YY') AND P.pid = O.pid AND O.pname != 'tablet' GROUP BY C.cname
+  2  /
+
+CNAME                                                                           
+---------------                                                                 
+Connie                                                                          
+Joe                                                                             
+John                                                                            
+Katie                                                                           
+Chris                                                                           
+Kathy                                                                           
+Mike                                                                            
+
+7 rows selected.
+
+SQL> start query8
+SQL> SELECT ename FROM employees WHERE NOT EXISTS (SELECT * FROM purchases P, products O WHERE employees.eid = P.eid AND P.pid = O.pid AND O.original_price >= 200)
+  2  /
+
+ENAME                                                                           
+---------------                                                                 
+Mike                                                                            
+
+SQL> start query9
+SQL> SELECT C.cid FROM customers C WHERE NOT EXISTS (SELECT * FROM products O where O.original_price > 200 AND NOT EXISTS (select * from purchases P where P.cid = C.cid and O.pid = P.pid))
+  2  /
+
+CID                                                                             
+----                                                                            
+c001                                                                            
+
+SQL> start query10
+SQL> SELECT E.eid, E.ename FROM employees E WHERE NOT EXISTS (SELECT * FROM customers C where C.visits_made >= 3 AND NOT EXISTS (select * from purchases P where P.cid = C.cid and P.eid = E.eid))
+  2  /
+
+EID ENAME                                                                       
+--- ---------------                                                             
+e01 Peter                                                                       
+e03 Susan                                                                       
+
+SQL> start query11
+SQL> SELECT * FROM products O WHERE EXISTS (SELECT * FROM purchases P WHERE P.pid = O.pid AND P.cid = 'c001' AND NOT EXISTS (SELECT * FROM purchases T WHERE T.pid= P.pid AND T.cid = 'c006'))
+  2  /
+
+PID  PNAME                  QOH QOH_THRESHOLD ORIGINAL_PRICE DISCNT_RATE        
+---- --------------- ---------- ------------- -------------- -----------        
+p008 computer                 5             3            499          .3        
+p003 camera                  20             5            148          .2        
+
+SQL> start query12
+SQL> SELECT C.cid FROM customers C WHERE EXISTS (SELECT * FROM purchases P WHERE P.cid = C.cid AND EXISTS (SELECT * FROM purchases T WHERE T.pid= P.pid AND T.cid = 'c006'))
+  2  /
+
+CID                                                                             
+----                                                                            
+c002                                                                            
+c006                                                                            
+c001                                                                            
+
+SQL> start query13
+SQL> SELECT C.cname FROM customers C, purchases P, products O WHERE P.cid = C.cid AND P.pid = O.pid AND ((O.original_price * P.qty) - P.total_price) > 100
+  2  /
+
+CNAME                                                                           
+---------------                                                                 
+Chris                                                                           
+Kathy                                                                           
+
+SQL> start query14
+SQL> SELECT C.cname FROM customers C WHERE EXISTS (SELECT * FROM purchases P WHERE P.cid = C.cid AND NOT EXISTS (SELECT * FROM purchases T WHERE T.total_price > P.total_price))
+  2  /
+
+CNAME                                                                           
+---------------                                                                 
+Chris                                                                           
+
+SQL> start query15
+SQL> SELECT * FROM products O WHERE EXISTS (SELECT * FROM purchases P WHERE P.pid = O.pid AND EXISTS (SELECT * FROM purchases T WHERE T.pur# != P.pur# AND T.pid = P.pid AND P.cid != T.cid))
+  2  /
+
+PID  PNAME                  QOH QOH_THRESHOLD ORIGINAL_PRICE DISCNT_RATE        
+---- --------------- ---------- ------------- -------------- -----------        
+p002 TV                       6             5            249         .15        
+p004 pencil                 100            10            .99           0        
+p006 lamp                    10             6          19.95          .1        
+p008 computer                 5             3            499          .3        
+
+SQL> start query16
+SQL> SELECT P.pur# FROM purchases P WHERE EXISTS(SELECT * FROM purchases T WHERE T.cid = 'c006' AND EXISTS (SELECT * FROM purchases S WHERE S.pur# = P.pur# AND S.total_price >= T.total_price))
+  2  /
+
+      PUR#                                                                      
+----------                                                                      
+    100013                                                                      
+    100005                                                                      
+    100008                                                                      
+    100010                                                                      
+    100006                                                                      
+    100012                                                                      
+    100014                                                                      
+    100001                                                                      
+    100002                                                                      
+    100004                                                                      
+    100007                                                                      
+
+      PUR#                                                                      
+----------                                                                      
+    100011                                                                      
+
+12 rows selected.
+
+SQL> start query17
+SQL> SELECT C.cid, C.cname , COUNT( DISTINCT P.pid) FROM purchases P, customers C WHERE P.cid = C.cid GROUP BY C.cid, C.cname ORDER BY C.cid, C.cname
+  2  /
+
+CID  CNAME           COUNT(DISTINCTP.PID)                                       
+---- --------------- --------------------                                       
+c001 Kathy                              3                                       
+c002 John                               1                                       
+c003 Chris                              3                                       
+c004 Mike                               1                                       
+c005 Mike                               1                                       
+c006 Connie                             2                                       
+c007 Katie                              1                                       
+c008 Joe                                1                                       
+
+8 rows selected.
+
+SQL> start query18
+SQL> SELECT C.cid, C.cname , SUM(P.total_price) FROM purchases P, customers C WHERE P.cid = C.cid AND NOT EXISTS(SELECT * FROM customers T WHERE T.visits_made > C.visits_made) GROUP BY C.cid, C.cname ORDER BY C.cid, C.cname
+  2  /
+
+CID  CNAME           SUM(P.TOTAL_PRICE)                                         
+---- --------------- ------------------                                         
+c001 Kathy                       679.35                                         
+c003 Chris                       752.68                                         
+
+SQL> start query19
+SQL> SELECT O.pname, SUM(P.qty) FROM products O, purchases P WHERE P.pid = O.pid AND NOT EXISTS (SELECT * FROM purchases B WHERE B.pid != P.pid AND B.qty > P.qty) GROUP BY O.pname
+  2  /
+
+PNAME           SUM(P.QTY)                                                      
+--------------- ----------                                                      
+pencil                  15                                                      
+
+SQL> start query20
+SQL> SELECT * FROM (SELECT cname, SUM(total_price) AS total FROM customers C, purchases P WHERE C.cid = P.cid GROUP BY cname ORDER BY total DESC) result WHERE ROWNUM <= 2
+  2  /
+
+CNAME                TOTAL                                                      
+--------------- ----------                                                      
+Chris               752.68                                                      
+Kathy               679.35                                                      
+
+SQL> spool off
